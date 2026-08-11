@@ -271,66 +271,87 @@ document.getElementById('btnClear').addEventListener('click', ()=>{
 });
 
 /* ---- Send order: validate, save to Supabase via /api/orders, then open WhatsApp ---- */
-btnSend.addEventListener('click', async ()=>{
-  const ids = Object.keys(order);
-  custError.textContent = '';
-
-  if(ids.length === 0){
-    document.getElementById('menu').scrollIntoView({behavior:'smooth'});
+(function setupSendOrder(){
+  const sendBtn = document.getElementById('btnSend');
+  if(!sendBtn){
+    console.error('[La Semilla] #btnSend not found in the DOM — check the button id in index.html.');
     return;
   }
 
-  const name = custName.value.trim();
-  const phone = custPhone.value.trim();
+  sendBtn.addEventListener('click', async function onSendOrderClick(e){
+    e.preventDefault();
+    custError.textContent = '';
 
-  if(!name){
-    custError.textContent = 'Please enter your name.';
-    custName.focus();
-    return;
-  }
-  if(!phone || !/^[0-9+\-()\s]{6,20}$/.test(phone)){
-    custError.textContent = 'Please enter a valid phone number.';
-    custPhone.focus();
-    return;
-  }
-
-  const items = ids.map(id => ({
-    name: order[id].name,
-    price: order[id].price,
-    qty: order[id].qty,
-  }));
-
-  const payload = { name, phone, items, totalPrice: currentSubtotal };
-
-  const originalLabel = btnSend.textContent;
-  btnSend.disabled = true;
-  btnSend.textContent = 'Sending…';
-
-  try{
-    const res = await fetch('/api/orders', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json().catch(()=>({}));
-
-    if(!res.ok){
-      throw new Error((data && (data.error || (data.details && data.details[0]))) || 'Could not save your order.');
+    const ids = Object.keys(order);
+    if(ids.length === 0){
+      custError.textContent = 'Add at least one item to your ticket first.';
+      document.getElementById('menu').scrollIntoView({behavior:'smooth'});
+      return;
     }
 
-    showToast('Order saved — opening WhatsApp…');
+    const name = (custName.value || '').trim();
+    const phone = (custPhone.value || '').trim();
 
-    const lines = items.map(it => `${it.qty} x ${it.name} - ${fmt(it.price*it.qty)}`).join('%0A');
-    const msg = `Hi La Semilla%2C I%27d like to order%3A%0A${lines}%0A%0ATotal%3A ${fmt(currentSubtotal)}%0A%0AName%3A ${encodeURIComponent(name)}%0APhone%3A ${encodeURIComponent(phone)}`;
-    window.open(`https://wa.me/${CAFE_WHATSAPP_NUMBER}?text=${msg}`, '_blank', 'noopener');
+    if(!name){
+      custError.textContent = 'Please enter your name.';
+      custName.focus();
+      return;
+    }
+    if(!phone || !/^[0-9+\-()\s]{6,20}$/.test(phone)){
+      custError.textContent = 'Please enter a valid phone number.';
+      custPhone.focus();
+      return;
+    }
 
-  } catch(err){
-    custError.textContent = err.message || 'Something went wrong — please try again.';
-  } finally {
-    btnSend.disabled = false;
-    btnSend.textContent = originalLabel;
-  }
-});
+    const items = ids.map(id => ({
+      name: order[id].name,
+      price: order[id].price,
+      qty: order[id].qty,
+    }));
+
+    const payload = { name, phone, items, totalPrice: currentSubtotal };
+
+    const originalLabel = sendBtn.textContent;
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending…';
+
+    try{
+      console.log('[La Semilla] Sending order to /api/orders', payload);
+
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      let data = {};
+      try{ data = await res.json(); }catch(parseErr){ /* non-JSON response, ignore */ }
+
+      if(!res.ok){
+        const message = (data && (data.error || (data.details && data.details[0]))) || `Order failed (HTTP ${res.status}).`;
+        throw new Error(message);
+      }
+
+      console.log('[La Semilla] Order saved:', data);
+      showToast('Order saved — opening WhatsApp…');
+
+      const lines = items.map(it => `${it.qty} x ${it.name} - ${fmt(it.price*it.qty)}`).join('%0A');
+      const msg = `Hi La Semilla%2C I%27d like to order%3A%0A${lines}%0A%0ATotal%3A ${fmt(currentSubtotal)}%0A%0AName%3A ${encodeURIComponent(name)}%0APhone%3A ${encodeURIComponent(phone)}`;
+      window.open(`https://wa.me/${CAFE_WHATSAPP_NUMBER}?text=${msg}`, '_blank', 'noopener');
+
+    } catch(err){
+      // Network failures (offline, CORS, API not deployed) land here too,
+      // since fetch() rejects instead of resolving with res.ok === false.
+      console.error('[La Semilla] Order send failed:', err);
+      custError.textContent = err && err.message
+        ? err.message
+        : 'Could not reach the server — check your connection and try again.';
+    } finally {
+      sendBtn.disabled = false;
+      sendBtn.textContent = originalLabel;
+    }
+  });
+})();
 
 /* ticket header meta */
 (function(){
