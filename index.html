@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Semilla Bake House — Bishal Chowk, Lalitpur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;1,9..144,450;1,9..144,600&family=Sora:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+        <circle cx="15" cy="15" r="14" stroke="#C6862A" stroke-width="1.4"/>
+        <path d="M15 22C15 22 9 18 9 12.5C9 9.5 11.2 7.5 14 8.2C14.6 8.35 15 8.8 15 9.4C15 8.8 15.4 8.35 16 8.2C18.8 7.5 21 9.5 21 12.5C21 18 15 22 15 22Z" fill="#C6862A"/>
+      </svg>
+      <div>
+        <span class="brand-name">La Semilla</span>
+        <span class="brand-sub">Bake House</span>
+      </div>
+    </div>
+    <div class="nav-links">
+      <a href="#story">Story</a>
+      <a href="#menu">Menu</a>
+      <a href="#order">Order</a>
+      <a href="#reviews">Reviews</a>
+      <a href="#visit">Visit</a>
+    </div>
+    <a href="#order" class="nav-cta">Start an order</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="hero-eyebrow">
+        <span class="dot"></span>
+        <span class="eyebrow" style="color:rgba(244,236,218,0.6)">Bishal Chowk · Nakhipot Road · Lalitpur</span>
+      </div>
+      <h1>A seed of<br>a cafe, grown<br>into a <em>gathering<br>place.</em></h1>
+      <p class="hero-lede">La Semilla means "the seed" — planted at Bishal Chowk as a small espresso counter, now a full bake house of coffee, cold brews, mocktails, and pastry, poured for whoever walks in.</p>
+      <div class="hero-meta">
+        <div>
+          <div class="num">4.2 ★</div>
+          <div class="lbl">110 Reviews</div>
+        </div>
+        <div>
+          <div class="num">Rs 500–1,000</div>
+          <div class="lbl">Per Person</div>
+        </div>
+        <div>
+          <div class="num">Open</div>
+          <div class="lbl">Closes 9 PM</div>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <a href="#order" class="btn btn-solid">Build your order</a>
+        <a href="#menu" class="btn btn-ghost">See full menu</a>
+      </div>
+    </div>
+    <div class="signage">
+      <div class="signage-frame">
+        <img id="img-storefront" src="images/storefront-night.png" alt="La Semilla Bake House storefront lit up at night">
+        <div class="signage-glow"></div>
+      </div>
+      <div class="signage-tag">Est. corner spot · <b>974-4412883</b></div>
+    </div>
+  </div>
+</header>
+
+<!-- STORY -->
+<section class="story section" id="story">
+  <div class="wrap story-grid">
+    <div class="story-collage">
+      <div class="c1"><img id="img-interior" src="images/interior-day.png" alt="Warm daylight interior of La Semilla Bake House with wooden tables and plants"></div>
+      <div class="c2"><img id="img-shelf" src="images/shelf-detail.png" alt="Open wooden shelving with pottery, books and a mustard pendant lamp"></div>
+      <div class="c3"><img id="img-lounge" src="images/lounge-corner.png" alt="Cosy reading corner with plants and pendant lighting"></div>
+    </div>
+    <div class="story-copy">
+      <span class="eyebrow">Our story</span>
+      <p class="lead">"We wanted a room where the coffee is unhurried and the light comes in low."</p>
+      <p>Tucked into Bishal Chowk on Nakhipot Road, La Semilla started as exactly that — a single seed of an idea: good espresso, honest bakes, and a room worth staying in. The shelves are stacked with pottery instead of props, the plants are here because someone waters them, and the pendant lights stay low and warm past dark.</p>
+      <p>Today the menu has grown well past the original espresso counter — into iced coffee, frappés, mocktails, lassi, and a bakery case that changes with the day — but the room still runs on the same idea: sit down, take your time, order slowly.</p>
+      <div class="story-facts">
+        <div><div class="num">12</div><div class="lbl">Menu Categories</div></div>
+        <div><div class="num">60+</div><div class="lbl">Things To Order</div></div>
+        <div><div class="num">9 PM</div><div class="lbl">Daily Close</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MENU -->
+<section class="menu section" id="menu">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">The full menu</span>
+      <h2>Twelve counters,<br>one bake house.</h2>
+      <p>Everything below is on the board today. Tap a category to browse, and tap the <span class="mono">+</span> beside anything you'd like — it drops straight into your order ticket.</p>
+    </div>
+
+    <div class="chip-row" id="chipRow"></div>
+    <div class="menu-panels" id="menuPanels"></div>
+  </div>
+</section>
+
+<!-- BILLING / ORDER -->
+<section class="billing section" id="order">
+  <div class="wrap billing-grid">
+    <div class="billing-copy">
+      <span class="eyebrow">Billing</span>
+      <h2 style="font-size:clamp(26px,3.2vw,36px);margin-top:10px;line-height:1.1;">Build your own<br>order ticket.</h2>
+      <p style="margin-top:16px;">No app, no account — just an honest running total, the way it would look on the counter. Add items from the menu above, adjust quantities on the ticket, and send it straight to us on WhatsApp when you're ready.</p>
+      <div class="billing-steps">
+        <div class="billing-step"><span class="n">1</span><span class="t"><b>Tap the + </b>beside any item in the menu to add it to your ticket.</span></div>
+        <div class="billing-step"><span class="n">2</span><span class="t"><b>Adjust quantity</b> with the − / + controls on the ticket itself.</span></div>
+        <div class="billing-step"><span class="n">3</span><span class="t"><b>Review your total</b> — it updates instantly, in Nepali Rupees.</span></div>
+        <div class="billing-step"><span class="n">4</span><span class="t"><b>Send it to the counter</b> via WhatsApp, or clear it and start again.</span></div>
+      </div>
+    </div>
+
+    <div class="ticket-wrap">
+      <div class="ticket">
+        <div class="ticket-head">
+          <div class="mark">La Semilla</div>
+          <div class="sub">Order Ticket · Bishal Chowk</div>
+          <div class="ticket-meta">
+            <span id="ticketDate"></span>
+            <span id="ticketId"></span>
+          </div>
+        </div>
+        <div id="ticketBody">
+          <div class="ticket-empty">Your ticket is empty — add something from the menu.</div>
+        </div>
+        <div class="ticket-summary" id="ticketSummary" style="display:none;">
+          <div class="row"><span>Items</span><span id="sumCount">0</span></div>
+          <div class="row"><span>Subtotal</span><span id="sumSubtotal">Rs 0.00</span></div>
+          <div class="row total"><span>Total due</span><span id="sumTotal">Rs 0.00</span></div>
+        </div>
+        <div class="ticket-actions">
+          <button class="btn btn-clear" id="btnClear">Clear ticket</button>
+          <a class="btn btn-solid" id="btnSend" href="#" target="_blank" rel="noopener">Send order →</a>
+        </div>
+        <div class="ticket-barcode"></div>
+        <div class="ticket-fine">THANK YOU · SEEDS GROW SLOW, COFFEE SHOULDN'T</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section class="reviews section" id="reviews">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow" style="color:var(--ochre)">What people say</span>
+      <h2>Reported by 53 people,<br>rated by 110.</h2>
+    </div>
+    <div class="rev-summary">
+      <div>
+        <div class="rev-score">4.2</div>
+        <div class="rev-stars">★★★★☆</div>
+        <div class="rev-count">110 GOOGLE REVIEWS</div>
+      </div>
+      <div class="rev-tagchips">
+        <span>Cafe · Rs 500–1,000</span>
+        <span>Plenty of parking</span>
+        <span>Good for groups</span>
+        <span>Free lot parking</span>
+      </div>
+    </div>
+
+    <div class="rev-grid" id="revGrid"></div>
+  </div>
+</section>
+
+<!-- VISIT -->
+<section class="visit section" id="visit">
+  <div class="wrap visit-grid">
+    <div class="visit-card">
+      <span class="eyebrow">Find us</span>
+      <h2 style="font-size:26px;margin-top:8px;">Come sit with us.</h2>
+      <div style="margin-top:6px;">
+        <div class="visit-row">
+          <div class="ic">⚲</div>
+          <div><div class="k">Address</div><div class="v">Bishal Chowk, Nakhipot Road, Lalitpur 44700</div></div>
+        </div>
+        <div class="visit-row">
+          <div class="ic">☎</div>
+          <div><div class="k">Phone</div><div class="v"><a href="tel:+9779744412883">974-4412883</a></div></div>
+        </div>
+        <div class="visit-row">
+          <div class="ic">⏱</div>
+          <div><div class="k">Hours today</div><div class="v">Open now · Closes 9 PM</div></div>
+        </div>
+        <div class="visit-row">
+          <div class="ic">🚗</div>
+          <div><div class="k">Parking</div><div class="v">Free lot parking on-site; can get tight on busy evenings</div></div>
+        </div>
+        <div class="visit-row">
+          <div class="ic">👥</div>
+          <div><div class="k">Best for</div><div class="v">Solo work sessions, catch-ups, and groups up to 8</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="visit-map">
+      <svg viewBox="0 0 400 340" preserveAspectRatio="xMidYMid slice">
+        <rect width="400" height="340" fill="#211B14"/>
+        <g stroke="rgba(244,236,218,0.16)" stroke-width="1">
+          <line x1="0" y1="60" x2="400" y2="40"/>
+          <line x1="0" y1="140" x2="400" y2="120"/>
+          <line x1="0" y1="230" x2="400" y2="255"/>
+          <line x1="60" y1="0" x2="30" y2="340"/>
+          <line x1="180" y1="0" x2="200" y2="340"/>
+          <line x1="300" y1="0" x2="330" y2="340"/>
+        </g>
+        <path d="M0 150 C 100 130, 180 190, 260 165 S 400 120 400 120" stroke="#C6862A" stroke-width="2.5" fill="none" opacity="0.55"/>
+      </svg>
+      <div class="visit-map-pin"><div class="pin"></div></div>
+      <div class="visit-map-label">
+        <div class="t">La Semilla Bake House</div>
+        <div class="a">Bishal Chowk · Nakhipot Rd · Lalitpur 44700</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <div><span class="brand-name mono" style="font-family:'Fraunces',serif;">La Semilla Bake House</span> — Bishal Chowk, Lalitpur</div>
+    <div class="footer-links">
+      <a href="tel:+9779744412883">974-4412883</a>
+      <a href="#order">Order ticket</a>
+      <a href="#menu">Menu</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"><span class="dot"></span><span id="toastMsg">Added to your ticket</span></div>
+
+<script src="js/script.js"></script>
+</body>
+</html>
