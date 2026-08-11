@@ -142,9 +142,20 @@
           <div class="row"><span>Subtotal</span><span id="sumSubtotal">Rs 0.00</span></div>
           <div class="row total"><span>Total due</span><span id="sumTotal">Rs 0.00</span></div>
         </div>
+        <div class="ticket-customer" id="ticketCustomer" style="display:none;">
+          <label class="tc-field">
+            <span class="tc-label">Name</span>
+            <input type="text" id="custName" placeholder="Your name" autocomplete="name">
+          </label>
+          <label class="tc-field">
+            <span class="tc-label">Phone</span>
+            <input type="tel" id="custPhone" placeholder="98XXXXXXXX" autocomplete="tel">
+          </label>
+          <div class="tc-error" id="custError"></div>
+        </div>
         <div class="ticket-actions">
           <button class="btn btn-clear" id="btnClear">Clear ticket</button>
-          <a class="btn btn-solid" id="btnSend" href="#" target="_blank" rel="noopener">Send order →</a>
+          <button class="btn btn-solid" id="btnSend" type="button">Send order →</button>
         </div>
         <div class="ticket-barcode"></div>
         <div class="ticket-fine">THANK YOU · SEEDS GROW SLOW, COFFEE SHOULDN'T</div>

@@ -172,15 +172,22 @@ REVIEWS.forEach(r=>{
 
 /* ============ BILLING / ORDER TICKET ============ */
 let order = {}; // id -> {name, price, qty}
+let currentSubtotal = 0;
 
 const ticketBody = document.getElementById('ticketBody');
 const ticketSummary = document.getElementById('ticketSummary');
+const ticketCustomer = document.getElementById('ticketCustomer');
 const sumCount = document.getElementById('sumCount');
 const sumSubtotal = document.getElementById('sumSubtotal');
 const sumTotal = document.getElementById('sumTotal');
 const btnSend = document.getElementById('btnSend');
+const custName = document.getElementById('custName');
+const custPhone = document.getElementById('custPhone');
+const custError = document.getElementById('custError');
 const toast = document.getElementById('toast');
 const toastMsg = document.getElementById('toastMsg');
+
+const CAFE_WHATSAPP_NUMBER = '9779744412883'; // La Semilla's WhatsApp number (with country code, no +)
 
 function fmt(n){ return 'Rs ' + n.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
@@ -217,8 +224,8 @@ function renderTicket(){
   if(ids.length === 0){
     ticketBody.innerHTML = `<div class="ticket-empty">Your ticket is empty — add something from the menu.</div>`;
     ticketSummary.style.display = 'none';
-    btnSend.setAttribute('href', '#menu');
-    btnSend.setAttribute('target','_self');
+    ticketCustomer.style.display = 'none';
+    currentSubtotal = 0;
     return;
   }
   let subtotal = 0, count = 0;
@@ -240,14 +247,11 @@ function renderTicket(){
   }).join('');
   ticketBody.innerHTML = `<div class="ticket-items">${rows}</div>`;
   ticketSummary.style.display = 'block';
+  ticketCustomer.style.display = 'flex';
   sumCount.textContent = count;
   sumSubtotal.textContent = fmt(subtotal);
   sumTotal.textContent = fmt(subtotal);
-
-  const lines = ids.map(id=>`${order[id].qty} x ${order[id].name} - ${fmt(order[id].price*order[id].qty)}`).join('%0A');
-  const msg = `Hi La Semilla%2C I%27d like to order%3A%0A${lines}%0A%0ATotal%3A ${fmt(subtotal).replace('Rs ','Rs ')}`;
-  btnSend.setAttribute('href', `https://wa.me/9779744412883?text=${msg}`);
-  btnSend.setAttribute('target','_blank');
+  currentSubtotal = subtotal;
 }
 
 document.addEventListener('click', (e)=>{
@@ -259,8 +263,73 @@ document.addEventListener('click', (e)=>{
 
 document.getElementById('btnClear').addEventListener('click', ()=>{
   order = {};
+  custName.value = '';
+  custPhone.value = '';
+  custError.textContent = '';
   renderTicket();
   showToast('Ticket cleared');
+});
+
+/* ---- Send order: validate, save to Supabase via /api/orders, then open WhatsApp ---- */
+btnSend.addEventListener('click', async ()=>{
+  const ids = Object.keys(order);
+  custError.textContent = '';
+
+  if(ids.length === 0){
+    document.getElementById('menu').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+
+  const name = custName.value.trim();
+  const phone = custPhone.value.trim();
+
+  if(!name){
+    custError.textContent = 'Please enter your name.';
+    custName.focus();
+    return;
+  }
+  if(!phone || !/^[0-9+\-()\s]{6,20}$/.test(phone)){
+    custError.textContent = 'Please enter a valid phone number.';
+    custPhone.focus();
+    return;
+  }
+
+  const items = ids.map(id => ({
+    name: order[id].name,
+    price: order[id].price,
+    qty: order[id].qty,
+  }));
+
+  const payload = { name, phone, items, totalPrice: currentSubtotal };
+
+  const originalLabel = btnSend.textContent;
+  btnSend.disabled = true;
+  btnSend.textContent = 'Sending…';
+
+  try{
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(()=>({}));
+
+    if(!res.ok){
+      throw new Error((data && (data.error || (data.details && data.details[0]))) || 'Could not save your order.');
+    }
+
+    showToast('Order saved — opening WhatsApp…');
+
+    const lines = items.map(it => `${it.qty} x ${it.name} - ${fmt(it.price*it.qty)}`).join('%0A');
+    const msg = `Hi La Semilla%2C I%27d like to order%3A%0A${lines}%0A%0ATotal%3A ${fmt(currentSubtotal)}%0A%0AName%3A ${encodeURIComponent(name)}%0APhone%3A ${encodeURIComponent(phone)}`;
+    window.open(`https://wa.me/${CAFE_WHATSAPP_NUMBER}?text=${msg}`, '_blank', 'noopener');
+
+  } catch(err){
+    custError.textContent = err.message || 'Something went wrong — please try again.';
+  } finally {
+    btnSend.disabled = false;
+    btnSend.textContent = originalLabel;
+  }
 });
 
 /* ticket header meta */

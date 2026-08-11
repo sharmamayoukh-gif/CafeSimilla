@@ -283,8 +283,19 @@ img{max-width:100%;display:block;}
 .ticket-summary .row{display:flex;justify-content:space-between;padding:3px 0;color:var(--ink-soft);}
 .ticket-summary .row.total{color:var(--ink);font-size:16.5px;font-weight:600;border-top:1px solid var(--line);margin-top:8px;padding-top:10px;}
 .ticket-summary .row.total span:last-child{color:var(--ochre-dim);}
+.ticket-customer{border-top:1px dashed var(--line);margin-top:14px;padding-top:14px;display:flex;flex-direction:column;gap:10px;}
+.tc-field{display:flex;flex-direction:column;gap:4px;}
+.tc-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-soft);opacity:0.65;}
+.tc-field input{
+  font-family:'Sora',sans-serif;font-size:13.5px;padding:9px 11px;
+  border:1px solid var(--line);border-radius:8px;background:var(--paper);
+  color:var(--ink);outline:none;transition:border-color .15s ease;
+}
+.tc-field input:focus{border-color:var(--ochre);}
+.tc-error{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--clay);min-height:14px;}
 .ticket-actions{display:flex;gap:8px;margin-top:16px;}
 .ticket-actions .btn{flex:1;justify-content:center;padding:11px 0;font-size:12.5px;}
+.ticket-actions .btn[disabled]{opacity:0.55;cursor:not-allowed;transform:none;}
 .btn-clear{background:none;border:1px solid var(--line);color:var(--ink-soft);}
 .btn-clear:hover{border-color:var(--clay);color:var(--clay);}
 .ticket-barcode{margin-top:16px;height:34px;background:repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 5px, var(--ink) 5px 6px, transparent 6px 9px, var(--ink) 9px 12px, transparent 12px 14px);opacity:0.75;}
