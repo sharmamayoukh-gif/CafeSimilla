@@ -180,7 +180,6 @@ const ticketCustomer = document.getElementById('ticketCustomer');
 const sumCount = document.getElementById('sumCount');
 const sumSubtotal = document.getElementById('sumSubtotal');
 const sumTotal = document.getElementById('sumTotal');
-const btnSend = document.getElementById('btnSend');
 const custName = document.getElementById('custName');
 const custPhone = document.getElementById('custPhone');
 const custError = document.getElementById('custError');
@@ -270,88 +269,101 @@ document.getElementById('btnClear').addEventListener('click', ()=>{
   showToast('Ticket cleared');
 });
 
-/* ---- Send order: validate, save to Supabase via /api/orders, then open WhatsApp ---- */
-(function setupSendOrder(){
-  const sendBtn = document.getElementById('btnSend');
-  if(!sendBtn){
-    console.error('[La Semilla] #btnSend not found in the DOM — check the button id in index.html.');
+/* ---- Send order ----
+   1. Always builds the WhatsApp message and opens it — this is the part
+      that must never silently fail, so it does not depend on the
+      Supabase save succeeding.
+   2. Best-effort saves the order to /api/orders first; if that fails
+      (API not deployed yet, missing env vars, offline, etc.) we log a
+      warning and still open WhatsApp, so the button never feels "dead".
+*/
+async function handleSendOrder(e){
+  if(e && e.preventDefault) e.preventDefault();
+  custError.textContent = '';
+
+  const ids = Object.keys(order);
+  if(ids.length === 0){
+    custError.textContent = 'Add at least one item to your ticket first.';
+    document.getElementById('menu').scrollIntoView({behavior:'smooth'});
     return;
   }
 
-  sendBtn.addEventListener('click', async function onSendOrderClick(e){
-    e.preventDefault();
-    custError.textContent = '';
+  const name = (custName.value || '').trim();
+  const phone = (custPhone.value || '').trim();
 
-    const ids = Object.keys(order);
-    if(ids.length === 0){
-      custError.textContent = 'Add at least one item to your ticket first.';
-      document.getElementById('menu').scrollIntoView({behavior:'smooth'});
-      return;
-    }
+  if(!name){
+    custError.textContent = 'Please enter your name.';
+    custName.focus();
+    return;
+  }
+  if(!phone || !/^[0-9+\-()\s]{6,20}$/.test(phone)){
+    custError.textContent = 'Please enter a valid phone number.';
+    custPhone.focus();
+    return;
+  }
 
-    const name = (custName.value || '').trim();
-    const phone = (custPhone.value || '').trim();
+  const items = ids.map(id => ({
+    name: order[id].name,
+    price: order[id].price,
+    qty: order[id].qty,
+  }));
 
-    if(!name){
-      custError.textContent = 'Please enter your name.';
-      custName.focus();
-      return;
-    }
-    if(!phone || !/^[0-9+\-()\s]{6,20}$/.test(phone)){
-      custError.textContent = 'Please enter a valid phone number.';
-      custPhone.focus();
-      return;
-    }
+  // Build the WhatsApp message text up front.
+  const lines = items.map(it => `${it.qty} x ${it.name} - ${fmt(it.price*it.qty)}`).join('\n');
+  const messageText =
+    `Hi La Semilla, I'd like to order:\n${lines}\n\n` +
+    `Total: ${fmt(currentSubtotal)}\n\n` +
+    `Name: ${name}\nPhone: ${phone}`;
+  const whatsappUrl = `https://wa.me/${CAFE_WHATSAPP_NUMBER}?text=${encodeURIComponent(messageText)}`;
 
-    const items = ids.map(id => ({
-      name: order[id].name,
-      price: order[id].price,
-      qty: order[id].qty,
-    }));
+  const sendBtn = document.getElementById('btnSend');
+  const originalLabel = sendBtn ? sendBtn.textContent : '';
+  if(sendBtn){ sendBtn.disabled = true; sendBtn.textContent = 'Sending…'; }
 
-    const payload = { name, phone, items, totalPrice: currentSubtotal };
+  try{
+    console.log('[La Semilla] Saving order to /api/orders', { name, phone, items, totalPrice: currentSubtotal });
 
-    const originalLabel = sendBtn.textContent;
-    sendBtn.disabled = true;
-    sendBtn.textContent = 'Sending…';
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, phone, items, totalPrice: currentSubtotal }),
+    });
 
-    try{
-      console.log('[La Semilla] Sending order to /api/orders', payload);
-
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      let data = {};
-      try{ data = await res.json(); }catch(parseErr){ /* non-JSON response, ignore */ }
-
-      if(!res.ok){
-        const message = (data && (data.error || (data.details && data.details[0]))) || `Order failed (HTTP ${res.status}).`;
-        throw new Error(message);
-      }
-
+    if(res.ok){
+      const data = await res.json().catch(()=>({}));
       console.log('[La Semilla] Order saved:', data);
       showToast('Order saved — opening WhatsApp…');
-
-      const lines = items.map(it => `${it.qty} x ${it.name} - ${fmt(it.price*it.qty)}`).join('%0A');
-      const msg = `Hi La Semilla%2C I%27d like to order%3A%0A${lines}%0A%0ATotal%3A ${fmt(currentSubtotal)}%0A%0AName%3A ${encodeURIComponent(name)}%0APhone%3A ${encodeURIComponent(phone)}`;
-      window.open(`https://wa.me/${CAFE_WHATSAPP_NUMBER}?text=${msg}`, '_blank', 'noopener');
-
-    } catch(err){
-      // Network failures (offline, CORS, API not deployed) land here too,
-      // since fetch() rejects instead of resolving with res.ok === false.
-      console.error('[La Semilla] Order send failed:', err);
-      custError.textContent = err && err.message
-        ? err.message
-        : 'Could not reach the server — check your connection and try again.';
-    } finally {
-      sendBtn.disabled = false;
-      sendBtn.textContent = originalLabel;
+    } else {
+      const data = await res.json().catch(()=>({}));
+      console.warn('[La Semilla] Order NOT saved to database:', res.status, data);
+      showToast('Opening WhatsApp (order not saved to database)');
     }
-  });
-})();
+  } catch(err){
+    // Network failure, /api/orders not deployed, offline, etc.
+    // We deliberately do NOT re-throw — the WhatsApp handoff below
+    // must still happen regardless of this failing.
+    console.warn('[La Semilla] Could not reach /api/orders:', err);
+    showToast('Opening WhatsApp (order not saved to database)');
+  }
+
+  // This always runs, whether or not the save above succeeded.
+  window.open(whatsappUrl, '_blank', 'noopener');
+
+  if(sendBtn){ sendBtn.disabled = false; sendBtn.textContent = originalLabel; }
+}
+
+const btnSendEl = document.getElementById('btnSend');
+if(btnSendEl){
+  btnSendEl.addEventListener('click', handleSendOrder);
+} else {
+  console.error('[La Semilla] #btnSend not found in the DOM — check the button id in index.html.');
+}
+
+// Redundant safety net: exposed globally so the inline onclick on the
+// button in index.html still works even if, for any reason, the
+// addEventListener call above never ran (e.g. an unrelated script error
+// earlier in the page stopped this file's execution before reaching it).
+window.sendOrderFallback = handleSendOrder;
 
 /* ticket header meta */
 (function(){

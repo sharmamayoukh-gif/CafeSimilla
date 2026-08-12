@@ -154,8 +154,8 @@
           <div class="tc-error" id="custError"></div>
         </div>
         <div class="ticket-actions">
-          <button class="btn btn-clear" id="btnClear">Clear ticket</button>
-          <button class="btn btn-solid" id="btnSend" type="button">Send order →</button>
+          <button class="btn btn-clear" id="btnClear" type="button">Clear ticket</button>
+          <button class="btn btn-solid" id="btnSend" type="button" onclick="if(window.sendOrderFallback){window.sendOrderFallback(event);}">Send order →</button>
         </div>
         <div class="ticket-barcode"></div>
         <div class="ticket-fine">THANK YOU · SEEDS GROW SLOW, COFFEE SHOULDN'T</div>

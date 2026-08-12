@@ -43,9 +43,10 @@ Open `index.html` directly in a browser, or serve the folder with any static fil
 
 When a visitor fills in their name and phone number and taps **Send order**, the site:
 
-1. POSTs the order (`name`, `phone`, `items`, `totalPrice`) to `/api/orders`.
-2. That serverless function validates it and inserts a row into a Supabase `orders` table.
-3. Only after a successful save does it open a pre-filled WhatsApp chat to the cafe's number.
+1. Attempts to POST the order (`name`, `phone`, `items`, `totalPrice`) to `/api/orders`, which saves it to Supabase.
+2. Opens a pre-filled WhatsApp chat to the cafe's number **either way** — even if the Supabase save fails or the API isn't deployed yet, the button still hands the order off via WhatsApp. Open the browser console to see whether the save succeeded (`Order saved`) or not (`Order NOT saved to database`).
+
+This means the button always does something visible when clicked. If WhatsApp doesn't open at all, check the browser console for a `[La Semilla]` log — it will say whether `#btnSend` was found and whether the click handler ran.
 
 ### 1. Create the Supabase table
 
