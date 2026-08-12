@@ -110,12 +110,19 @@ othersChip.dataset.target = 'panel-others';
 othersChip.addEventListener('click', () => activatePanel('others'));
 chipRow.appendChild(othersChip);
 
+// "Billing" isn't a menu panel — it opens the bill modal instead.
+const billingChip = document.createElement('button');
+billingChip.className = 'chip chip-billing';
+billingChip.textContent = '🧾 Billing';
+billingChip.addEventListener('click', () => openBillingModal());
+chipRow.appendChild(billingChip);
+
 categories.forEach((cat, i) => {
   const panel = document.createElement('div');
   panel.className = 'menu-panel' + (i===0 ? ' active' : '');
   panel.id = 'panel-'+i;
   const noteHtml = `<div class="menu-cat-note">${MENU[cat].note}</div>`;
-  const itemsHtml = MENU[cat].items.map((it, idx) => {
+  const itemsHtml = MENU[cat].items.map((it) => {
     const id = cat+'|'+it.n;
     return `<div class="menu-item">
       <div style="flex:1;">
@@ -124,7 +131,7 @@ categories.forEach((cat, i) => {
       </div>
       <span class="menu-item-leader"></span>
       <span class="menu-item-price">Rs ${it.p.toFixed(2)}</span>
-      <button class="menu-item-add" data-id="${id}" data-name="${it.n}" data-price="${it.p}" aria-label="Add ${it.n} to order">+</button>
+      <button class="menu-item-add" data-id="${id}" data-name="${it.n}" data-price="${it.p}" aria-label="Add ${it.n} to your bill">+</button>
     </div>`;
   }).join('');
   panel.innerHTML = noteHtml + `<div class="menu-list">${itemsHtml}</div>`;
@@ -170,86 +177,134 @@ REVIEWS.forEach(r=>{
   revGrid.appendChild(card);
 });
 
-/* ============ BILLING / ORDER TICKET ============ */
-let order = {}; // id -> {name, price, qty}
+/* mobile nav simple anchor smooth handled by CSS scroll-behavior */
 
-const ticketBody = document.getElementById('ticketBody');
-const ticketSummary = document.getElementById('ticketSummary');
-const sumCount = document.getElementById('sumCount');
-const sumSubtotal = document.getElementById('sumSubtotal');
-const sumTotal = document.getElementById('sumTotal');
-const btnSend = document.getElementById('btnSend');
-const toast = document.getElementById('toast');
-const toastMsg = document.getElementById('toastMsg');
+/* ============================================================
+   BILLING SYSTEM (new)
+   A floating "🧾" button + modal invoice, reachable from the nav,
+   hero, menu chip, and footer — instead of a fixed page section.
+   Shows: customer name, the order (items + qty), price per item,
+   and the total price. Saves to Supabase via /api/orders, then
+   always opens WhatsApp with the bill, whether or not the save
+   succeeded (so the button never feels "dead").
+   ============================================================ */
+
+let order = {}; // id -> { name, price, qty }
+let currentTotal = 0;
+
+const CAFE_WHATSAPP_NUMBER = '9779744412883'; // with country code, no +
+
+const billingOverlay = document.getElementById('billingOverlay');
+const billingFab = document.getElementById('billingFab');
+const billingFabBadge = document.getElementById('billingFabBadge');
+const billingModalClose = document.getElementById('billingModalClose');
+const bmTbody = document.getElementById('bmTbody');
+const bmTotalPrice = document.getElementById('bmTotalPrice');
+const bmCustName = document.getElementById('bmCustName');
+const bmCustPhone = document.getElementById('bmCustPhone');
+const bmError = document.getElementById('bmError');
+const bmSubmit = document.getElementById('bmSubmit');
+const bmClear = document.getElementById('bmClear');
+const bmBillId = document.getElementById('bmBillId');
 
 function fmt(n){ return 'Rs ' + n.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
-function showToast(msg){
-  toastMsg.textContent = msg;
-  toast.classList.add('show');
-  clearTimeout(showToast._t);
-  showToast._t = setTimeout(()=>toast.classList.remove('show'), 1800);
+function cartCount(){
+  return Object.values(order).reduce((sum, it) => sum + it.qty, 0);
+}
+
+function updateFabBadge(){
+  const count = cartCount();
+  if(count > 0){
+    billingFabBadge.textContent = count;
+    billingFabBadge.style.display = 'flex';
+  } else {
+    billingFabBadge.style.display = 'none';
+  }
 }
 
 function addItem(id, name, price){
   if(order[id]){ order[id].qty += 1; }
   else{ order[id] = {name, price, qty:1}; }
-  renderTicket();
+  updateFabBadge();
+  renderBillModal();
   const btn = document.querySelector(`.menu-item-add[data-id="${CSS.escape(id)}"]`);
   if(btn){ btn.classList.add('added'); setTimeout(()=>btn.classList.remove('added'), 500); }
-  showToast(name + ' added to ticket');
 }
 
 function changeQty(id, delta){
   if(!order[id]) return;
   order[id].qty += delta;
   if(order[id].qty <= 0) delete order[id];
-  renderTicket();
+  updateFabBadge();
+  renderBillModal();
 }
 
 function removeItem(id){
   delete order[id];
-  renderTicket();
+  updateFabBadge();
+  renderBillModal();
 }
 
-function renderTicket(){
+function renderBillModal(){
   const ids = Object.keys(order);
+
   if(ids.length === 0){
-    ticketBody.innerHTML = `<div class="ticket-empty">Your ticket is empty — add something from the menu.</div>`;
-    ticketSummary.style.display = 'none';
-    btnSend.setAttribute('href', '#menu');
-    btnSend.setAttribute('target','_self');
+    bmTbody.innerHTML = `<tr class="bm-empty-row"><td colspan="5">No items yet — add something from the menu.</td></tr>`;
+    bmTotalPrice.textContent = fmt(0);
+    currentTotal = 0;
     return;
   }
-  let subtotal = 0, count = 0;
-  const rows = ids.map(id=>{
+
+  let total = 0;
+  const rows = ids.map(id => {
     const it = order[id];
     const lineTotal = it.price * it.qty;
-    subtotal += lineTotal;
-    count += it.qty;
-    return `<div class="ticket-item">
-      <div class="qty-ctrl">
-        <button onclick="changeQty('${id.replace(/'/g,"\\'")}',-1)" aria-label="Decrease quantity">−</button>
-        <span>${it.qty}</span>
-        <button onclick="changeQty('${id.replace(/'/g,"\\'")}',1)" aria-label="Increase quantity">+</button>
-      </div>
-      <div class="name"><b>${it.name}</b><span>${fmt(it.price)} each</span></div>
-      <div class="line-total">${fmt(lineTotal)}</div>
-      <button class="rm" onclick="removeItem('${id.replace(/'/g,"\\'")}')" aria-label="Remove item">✕</button>
-    </div>`;
+    total += lineTotal;
+    return `<tr>
+      <td class="bm-item-name">${it.name}</td>
+      <td>
+        <div class="bm-qty-ctrl">
+          <button type="button" onclick="changeQty('${id.replace(/'/g,"\\'")}',-1)" aria-label="Decrease quantity">−</button>
+          <span>${it.qty}</span>
+          <button type="button" onclick="changeQty('${id.replace(/'/g,"\\'")}',1)" aria-label="Increase quantity">+</button>
+        </div>
+      </td>
+      <td class="bm-num-cell">${fmt(it.price)}</td>
+      <td class="bm-num-cell">${fmt(lineTotal)}</td>
+      <td><button type="button" class="bm-rm-btn" onclick="removeItem('${id.replace(/'/g,"\\'")}')" aria-label="Remove item">✕</button></td>
+    </tr>`;
   }).join('');
-  ticketBody.innerHTML = `<div class="ticket-items">${rows}</div>`;
-  ticketSummary.style.display = 'block';
-  sumCount.textContent = count;
-  sumSubtotal.textContent = fmt(subtotal);
-  sumTotal.textContent = fmt(subtotal);
 
-  const lines = ids.map(id=>`${order[id].qty} x ${order[id].name} - ${fmt(order[id].price*order[id].qty)}`).join('%0A');
-  const msg = `Hi La Semilla%2C I%27d like to order%3A%0A${lines}%0A%0ATotal%3A ${fmt(subtotal).replace('Rs ','Rs ')}`;
-  btnSend.setAttribute('href', `https://wa.me/9779744412883?text=${msg}`);
-  btnSend.setAttribute('target','_blank');
+  bmTbody.innerHTML = rows;
+  bmTotalPrice.textContent = fmt(total);
+  currentTotal = total;
 }
 
+/* ---- modal open/close ---- */
+function openBillingModal(){
+  renderBillModal();
+  billingOverlay.classList.add('open');
+  billingOverlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  const idNum = 1000 + Math.floor(Math.random()*900);
+  bmBillId.textContent = '#LS-' + idNum;
+}
+function closeBillingModal(){
+  billingOverlay.classList.remove('open');
+  billingOverlay.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+  bmError.textContent = '';
+}
+
+document.querySelectorAll('.js-open-billing').forEach(el=>{
+  el.addEventListener('click', (e)=>{ e.preventDefault(); openBillingModal(); });
+});
+billingModalClose.addEventListener('click', closeBillingModal);
+billingOverlay.addEventListener('click', (e)=>{ if(e.target === billingOverlay) closeBillingModal(); });
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && billingOverlay.classList.contains('open')) closeBillingModal(); });
+
+/* ---- add-to-bill button clicks (event delegation) ---- */
 document.addEventListener('click', (e)=>{
   const btn = e.target.closest('.menu-item-add');
   if(btn){
@@ -257,19 +312,87 @@ document.addEventListener('click', (e)=>{
   }
 });
 
-document.getElementById('btnClear').addEventListener('click', ()=>{
+/* ---- clear bill ---- */
+bmClear.addEventListener('click', ()=>{
   order = {};
-  renderTicket();
-  showToast('Ticket cleared');
+  bmCustName.value = '';
+  bmCustPhone.value = '';
+  bmError.textContent = '';
+  updateFabBadge();
+  renderBillModal();
 });
 
-/* ticket header meta */
-(function(){
-  const d = new Date();
-  document.getElementById('ticketDate').textContent = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  document.getElementById('ticketId').textContent = '#LS-' + (1000 + Math.floor(Math.random()*900));
-})();
+/* ---- submit / send bill ----
+   1. Best-effort saves the order to /api/orders (Supabase).
+   2. Always opens WhatsApp with the bill afterwards, whether or
+      not the save succeeded — so the button always does something.
+*/
+bmSubmit.addEventListener('click', async ()=>{
+  bmError.textContent = '';
 
-renderTicket();
+  const ids = Object.keys(order);
+  if(ids.length === 0){
+    bmError.textContent = 'Add at least one item to your bill first.';
+    return;
+  }
 
-/* mobile nav simple anchor smooth handled by CSS scroll-behavior */
+  const name = (bmCustName.value || '').trim();
+  const phone = (bmCustPhone.value || '').trim();
+
+  if(!name){
+    bmError.textContent = 'Please enter the customer name.';
+    bmCustName.focus();
+    return;
+  }
+  if(!phone || !/^[0-9+\-()\s]{6,20}$/.test(phone)){
+    bmError.textContent = 'Please enter a valid phone number.';
+    bmCustPhone.focus();
+    return;
+  }
+
+  const items = ids.map(id => ({
+    name: order[id].name,
+    price: order[id].price,
+    qty: order[id].qty,
+  }));
+
+  const lines = items.map(it => `${it.qty} x ${it.name} - ${fmt(it.price*it.qty)}`).join('\n');
+  const messageText =
+    `Hi La Semilla, I'd like to order:\n${lines}\n\n` +
+    `Total: ${fmt(currentTotal)}\n\n` +
+    `Name: ${name}\nPhone: ${phone}`;
+  const whatsappUrl = `https://wa.me/${CAFE_WHATSAPP_NUMBER}?text=${encodeURIComponent(messageText)}`;
+
+  const originalLabel = bmSubmit.textContent;
+  bmSubmit.disabled = true;
+  bmSubmit.textContent = 'Sending…';
+
+  try{
+    console.log('[La Semilla] Saving bill to /api/orders', { name, phone, items, totalPrice: currentTotal });
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, phone, items, totalPrice: currentTotal }),
+    });
+    if(res.ok){
+      console.log('[La Semilla] Bill saved.');
+    } else {
+      const data = await res.json().catch(()=>({}));
+      console.warn('[La Semilla] Bill NOT saved to database:', res.status, data);
+    }
+  } catch(err){
+    console.warn('[La Semilla] Could not reach /api/orders:', err);
+  }
+
+  window.open(whatsappUrl, '_blank', 'noopener');
+
+  bmSubmit.disabled = false;
+  bmSubmit.textContent = originalLabel;
+
+  // Treat the bill as sent: clear the cart and close the modal.
+  order = {};
+  bmCustPhone.value = '';
+  updateFabBadge();
+  renderBillModal();
+  closeBillingModal();
+});
