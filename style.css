@@ -191,6 +191,14 @@ img{max-width:100%;display:block;}
 }
 .chip:hover{border-color:var(--ochre);color:var(--paper-hi);}
 .chip.active{background:var(--ochre);border-color:var(--ochre);color:var(--ink);font-weight:600;}
+.chip-billing{
+  margin-left:6px;
+  border-color:var(--pine);
+  color:var(--paper-hi);
+  background:rgba(72,88,58,0.35);
+  font-weight:600;
+}
+.chip-billing:hover{background:var(--pine);border-color:var(--pine);}
 
 .menu-panels{position:relative;}
 .menu-panel{display:none;}
@@ -261,6 +269,8 @@ img{max-width:100%;display:block;}
 .ticket-head .mark{font-family:'Fraunces',serif;font-weight:600;font-size:18px;}
 .ticket-head .sub{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-soft);opacity:0.65;margin-top:4px;}
 .ticket-meta{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-soft);opacity:0.7;display:flex;justify-content:space-between;margin-top:10px;}
+.ticket-billed-to{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-soft);margin-top:8px;text-align:center;}
+.ticket-billed-to b{color:var(--ochre-dim);font-weight:600;}
 .ticket-empty{padding:34px 6px;text-align:center;font-size:13px;color:var(--ink-soft);opacity:0.6;font-style:italic;font-family:'Fraunces',serif;}
 .ticket-items{display:flex;flex-direction:column;gap:0;max-height:280px;overflow-y:auto;}
 .ticket-item{

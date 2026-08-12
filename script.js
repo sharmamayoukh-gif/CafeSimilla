@@ -110,6 +110,16 @@ othersChip.dataset.target = 'panel-others';
 othersChip.addEventListener('click', () => activatePanel('others'));
 chipRow.appendChild(othersChip);
 
+// "Billing" isn't a menu panel — it jumps straight to the billing
+// section further down the page instead of switching tabs.
+const billingChip = document.createElement('button');
+billingChip.className = 'chip chip-billing';
+billingChip.textContent = '🧾 Billing';
+billingChip.addEventListener('click', () => {
+  document.getElementById('order').scrollIntoView({behavior:'smooth'});
+});
+chipRow.appendChild(billingChip);
+
 categories.forEach((cat, i) => {
   const panel = document.createElement('div');
   panel.className = 'menu-panel' + (i===0 ? ' active' : '');
@@ -183,10 +193,23 @@ const sumTotal = document.getElementById('sumTotal');
 const custName = document.getElementById('custName');
 const custPhone = document.getElementById('custPhone');
 const custError = document.getElementById('custError');
+const ticketBilledTo = document.getElementById('ticketBilledTo');
+const billedToName = document.getElementById('billedToName');
 const toast = document.getElementById('toast');
 const toastMsg = document.getElementById('toastMsg');
 
 const CAFE_WHATSAPP_NUMBER = '9779744412883'; // La Semilla's WhatsApp number (with country code, no +)
+
+function updateBilledTo(){
+  const n = (custName.value || '').trim();
+  if(n && Object.keys(order).length > 0){
+    billedToName.textContent = n;
+    ticketBilledTo.style.display = 'block';
+  } else {
+    ticketBilledTo.style.display = 'none';
+  }
+}
+custName.addEventListener('input', updateBilledTo);
 
 function fmt(n){ return 'Rs ' + n.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
@@ -225,6 +248,7 @@ function renderTicket(){
     ticketSummary.style.display = 'none';
     ticketCustomer.style.display = 'none';
     currentSubtotal = 0;
+    updateBilledTo();
     return;
   }
   let subtotal = 0, count = 0;
@@ -250,6 +274,7 @@ function renderTicket(){
   sumCount.textContent = count;
   sumSubtotal.textContent = fmt(subtotal);
   sumTotal.textContent = fmt(subtotal);
+  updateBilledTo();
   currentSubtotal = subtotal;
 }
 
