@@ -2,7 +2,7 @@
   "name": "la-semilla-bake-house",
   "version": "1.0.0",
   "private": true,
-  "description": "La Semilla Bake House website + Vercel serverless API for saving orders to Supabase.",
+  "description": "La Semilla Bake House website + Vercel serverless API for saving bills to Supabase.",
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4"
   }

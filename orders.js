@@ -2,7 +2,7 @@
 //
 // Vercel serverless function (Node.js runtime).
 // Any file in /api becomes its own endpoint automatically — this one
-// handles POST /api/orders and saves the order to Supabase.
+// handles POST /api/orders and saves a customer's bill to Supabase.
 //
 // Required environment variables (set these in the Vercel dashboard,
 // Project Settings -> Environment Variables — NOT prefixed with NEXT_PUBLIC_
@@ -79,10 +79,10 @@ module.exports = async function handler(req, res) {
       .from('orders')
       .insert([
         {
-          customer_name: cleanName,
-          phone_number: cleanPhone,
-          items, // stored as jsonb: [{ name, price, qty }, ...]
-          total_price: total,
+          customer_name: cleanName,     // customer name, from the bill's Name field
+          phone_number: cleanPhone,     // customer phone
+          items,                        // the order: jsonb [{ name, price, qty }, ...]
+          total_price: total,           // total price for the bill
         },
       ])
       .select()

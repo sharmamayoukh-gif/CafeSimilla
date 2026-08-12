@@ -26,11 +26,11 @@
     <div class="nav-links">
       <a href="#story">Story</a>
       <a href="#menu">Menu</a>
-      <a href="#order">Billing</a>
+      <a href="#" class="js-open-billing">Billing</a>
       <a href="#reviews">Reviews</a>
       <a href="#visit">Visit</a>
     </div>
-    <a href="#order" class="nav-cta">Go to billing</a>
+    <a href="#" class="nav-cta js-open-billing">View bill</a>
   </div>
 </nav>
 
@@ -59,7 +59,7 @@
         </div>
       </div>
       <div class="hero-actions">
-        <a href="#order" class="btn btn-solid">Build your order</a>
+        <a href="#" class="btn btn-solid js-open-billing">Start your bill</a>
         <a href="#menu" class="btn btn-ghost">See full menu</a>
       </div>
     </div>
@@ -101,67 +101,11 @@
     <div class="section-head">
       <span class="eyebrow">The full menu</span>
       <h2>Twelve counters,<br>one bake house.</h2>
-      <p>Everything below is on the board today. Tap a category to browse, and tap the <span class="mono">+</span> beside anything you'd like — it drops straight into your order ticket.</p>
+      <p>Everything below is on the board today. Tap the <span class="mono">+</span> beside anything you'd like — it drops straight into your bill.</p>
     </div>
 
     <div class="chip-row" id="chipRow"></div>
     <div class="menu-panels" id="menuPanels"></div>
-  </div>
-</section>
-
-<!-- BILLING / ORDER -->
-<section class="billing section" id="order">
-  <div class="wrap billing-grid">
-    <div class="billing-copy">
-      <span class="eyebrow">Billing</span>
-      <h2 style="font-size:clamp(26px,3.2vw,36px);margin-top:10px;line-height:1.1;">Build your own<br>order ticket.</h2>
-      <p style="margin-top:16px;">No app, no account — just an honest running total, the way it would look on the counter. Add items from the menu above, adjust quantities on the ticket, and send it straight to us on WhatsApp when you're ready.</p>
-      <div class="billing-steps">
-        <div class="billing-step"><span class="n">1</span><span class="t"><b>Tap the + </b>beside any item in the menu to add it to your ticket.</span></div>
-        <div class="billing-step"><span class="n">2</span><span class="t"><b>Adjust quantity</b> with the − / + controls on the ticket itself.</span></div>
-        <div class="billing-step"><span class="n">3</span><span class="t"><b>Review your total</b> — it updates instantly, in Nepali Rupees.</span></div>
-        <div class="billing-step"><span class="n">4</span><span class="t"><b>Send it to the counter</b> via WhatsApp, or clear it and start again.</span></div>
-      </div>
-    </div>
-
-    <div class="ticket-wrap">
-      <div class="ticket">
-        <div class="ticket-head">
-          <div class="mark">La Semilla</div>
-          <div class="sub">Order Ticket · Bishal Chowk</div>
-          <div class="ticket-meta">
-            <span id="ticketDate"></span>
-            <span id="ticketId"></span>
-          </div>
-          <div class="ticket-billed-to" id="ticketBilledTo" style="display:none;">Billed to <b id="billedToName"></b></div>
-        </div>
-        <div id="ticketBody">
-          <div class="ticket-empty">Your ticket is empty — add something from the menu.</div>
-        </div>
-        <div class="ticket-summary" id="ticketSummary" style="display:none;">
-          <div class="row"><span>Items</span><span id="sumCount">0</span></div>
-          <div class="row"><span>Subtotal</span><span id="sumSubtotal">Rs 0.00</span></div>
-          <div class="row total"><span>Total due</span><span id="sumTotal">Rs 0.00</span></div>
-        </div>
-        <div class="ticket-customer" id="ticketCustomer" style="display:none;">
-          <label class="tc-field">
-            <span class="tc-label">Name</span>
-            <input type="text" id="custName" placeholder="Your name" autocomplete="name">
-          </label>
-          <label class="tc-field">
-            <span class="tc-label">Phone</span>
-            <input type="tel" id="custPhone" placeholder="98XXXXXXXX" autocomplete="tel">
-          </label>
-          <div class="tc-error" id="custError"></div>
-        </div>
-        <div class="ticket-actions">
-          <button class="btn btn-clear" id="btnClear" type="button">Clear ticket</button>
-          <button class="btn btn-solid" id="btnSend" type="button" onclick="if(window.sendOrderFallback){window.sendOrderFallback(event);}">Send order →</button>
-        </div>
-        <div class="ticket-barcode"></div>
-        <div class="ticket-fine">THANK YOU · SEEDS GROW SLOW, COFFEE SHOULDN'T</div>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -241,13 +185,74 @@
     <div><span class="brand-name mono" style="font-family:'Fraunces',serif;">La Semilla Bake House</span> — Bishal Chowk, Lalitpur</div>
     <div class="footer-links">
       <a href="tel:+9779744412883">974-4412883</a>
-      <a href="#order">Order ticket</a>
+      <a href="#" class="js-open-billing">Billing</a>
       <a href="#menu">Menu</a>
+      <a href="#visit">Visit</a>
     </div>
   </div>
 </footer>
 
-<div class="toast" id="toast"><span class="dot"></span><span id="toastMsg">Added to your ticket</span></div>
+<!-- BILLING: floating button + modal invoice (new billing system) -->
+<button class="billing-fab js-open-billing" id="billingFab" type="button" aria-label="Open your bill">
+  🧾
+  <span class="billing-fab-badge" id="billingFabBadge" style="display:none;">0</span>
+</button>
+
+<div class="billing-overlay" id="billingOverlay" aria-hidden="true">
+  <div class="billing-modal" role="dialog" aria-modal="true" aria-labelledby="billingModalTitle">
+    <button class="billing-modal-close" id="billingModalClose" type="button" aria-label="Close bill">✕</button>
+
+    <div class="bm-head">
+      <div class="bm-brand">
+        <div class="mark">La Semilla Bake House</div>
+        <div class="sub">Bishal Chowk · Nakhipot Road</div>
+      </div>
+      <div class="bm-tag">
+        <span class="lbl">Bill</span>
+        <span id="bmBillId" class="val"></span>
+      </div>
+    </div>
+    <h3 id="billingModalTitle" class="bm-title">Your Bill</h3>
+
+    <div class="bm-field">
+      <label for="bmCustName">Customer name</label>
+      <input type="text" id="bmCustName" placeholder="Enter customer name" autocomplete="name">
+    </div>
+
+    <table class="bm-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th class="bm-qty">Qty</th>
+          <th class="bm-num">Price</th>
+          <th class="bm-num">Amount</th>
+          <th class="bm-rm"></th>
+        </tr>
+      </thead>
+      <tbody id="bmTbody">
+        <tr class="bm-empty-row"><td colspan="5">No items yet — add something from the menu.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="bm-total-row">
+      <span>Total price</span>
+      <span id="bmTotalPrice">Rs 0.00</span>
+    </div>
+
+    <div class="bm-field bm-field-optional">
+      <label for="bmCustPhone">Phone <span>(for a WhatsApp copy)</span></label>
+      <input type="tel" id="bmCustPhone" placeholder="98XXXXXXXX" autocomplete="tel">
+    </div>
+
+    <div class="bm-error" id="bmError"></div>
+
+    <div class="bm-actions">
+      <button class="btn btn-clear" id="bmClear" type="button">Clear</button>
+      <button class="btn btn-solid" id="bmSubmit" type="button">Save &amp; send bill →</button>
+    </div>
+    <div class="bm-fine">Saved bills are recorded for the counter — no payment is taken on this page.</div>
+  </div>
+</div>
 
 <script src="js/script.js"></script>
 </body>
